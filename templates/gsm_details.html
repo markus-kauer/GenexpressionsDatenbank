@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<div class="container-flex">
+    {% if gsm_details %}
+    <div class="row justify-content-center mt-4">
+        <div class="col-9 ">
+            <div class="card customized-background p-4 mb-4">
+                <h3 class="customized-headline text-center ">{{ gsm_details['Sample-ID'] }}</h3>
+                <table class="info-table">
+                    <tbody>
+                        <tr>
+                            <th scope="row">Title</th>
+                            <td>{{ gsm_details['Title'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Type</th>
+                            <td>{{ gsm_details['Type'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Description</th>
+                            <td>{{ gsm_details['Description'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Contact Email</th>
+                            <td>{{ gsm_details['Contact Email'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Source Name CH1</th>
+                            <td>{{ gsm_details['Source Name CH1'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Organism CH1</th>
+                            <td>{{ gsm_details['Organism CH1'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Taxid CH1</th>
+                            <td>{{ gsm_details['Taxid CH1'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Characteristics CH1</th>
+                            <td>{{ gsm_details['Characteristics CH1'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Molecule CH1</th>
+                            <td>{{ gsm_details['Molecule CH1'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Extract Protocol CH1</th>
+                            <td>{{ gsm_details['Extract Protocol CH1'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Label CH1</th>
+                            <td>{{ gsm_details['Label CH1'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Label Protocol CH1</th>
+                            <td>{{ gsm_details['Label Protocol CH1'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Hyb Protocol</th>
+                            <td>{{ gsm_details['Hyb Protocol'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Scan Protocol</th>
+                            <td>{{ gsm_details['Scan Protocol'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Data Processing</th>
+                            <td>{{ gsm_details['Data Processing'] }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Platform-Link</th>
+                            <td>
+                                <a class="table-link" href="{{ url_for('platform', gpl_id=gsm_details['Platform-ID']) }}">
+                                    {{ gsm_details['Platform-ID'] }}
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Series-Link</th>
+                            <td>
+                                {% for series_id in gsm_details['Series-IDs'] %}
+                                    <a class="table-link" href="{{ url_for('series_details', gse_id=series_id) }}">
+                                        {{ series_id }}
+                                    </a>
+                                    {% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row justify-content-center">
+        <div class="col-12 text-center">
+            <p class="text-danger">No information available.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

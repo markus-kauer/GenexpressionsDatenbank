@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block main_content %}
+<div class="container-flex px-4">
+    <div class="row mt-4">
+        <div class="col-12 ">
+            <div class="card customized-shadow customized-background p-4"> 
+                <h2 class="customized-headline">Export History</h2>
+                <div style="overflow-y: auto; max-height: 800px;">
+                    <table class="table info-table" style="width: 100%;">
+                        <thead style="position: sticky; top: 0; background-color: white; z-index: 1;">
+                            <tr>
+                                <th class="text-center">Date</th>
+                                <th class="text-center">Sample List</th>
+                                <th class="text-center">Normalization Method</th>
+                                <th class="text-center">Scaling Method</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            {% for record in history %}
+                            <tr>
+                                <td class="text-center">{{ record.export_date }}</td>
+                                <td>{{ record.sample_list }}</td>
+                                <td class="text-center">{{ record.normalization_method }}</td>
+                                {% if record.scaling_method %}
+                                    <td class="text-center">log1</td>
+                                {% else %}
+                                    <td class="text-center">n/a</td>
+                                {% endif %}
+                                <td class="text-center">
+                                    <a href="/export_csv?sample_list={{ record.sample_list }}&normalization_method={{ record.normalization_method }}&log_transform={{ record.scaling_method }}" class="btn btn-success" onclick="showLoadingOverlay()">Export</a>
+                                    &nbsp;
+                                    <a href="javascript:void(0);" onclick="copyToClipboard('{{ record.sample_list }}', '{{ record.normalization_method }}', '{{ record.scaling_method }}')" title="Copy to clipboard">
+                                        <i class="bi bi-clipboard"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>      
+
+    <script>
+        function copyToClipboard(sampleList, normalizationMethod, logTransform) {
+            const exportUrl = `${window.location.origin}/export_csv?sample_list=${sampleList}&normalization_method=${normalizationMethod}&log_transform=${logTransform}`;
+            
+            navigator.clipboard.writeText(exportUrl).then(function() {
+                alert('Copied to clipboard: ' + exportUrl);
+            }).catch(function(error) {
+                alert('Error copying text: ' + error);
+            });
+        }
+
+        function showLoadingOverlay() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        document.querySelectorAll('a[href*="/export_csv"]').forEach(anchor => {
+            anchor.addEventListener('click', function(event) {
+                event.preventDefault(); 
+                const url = this.href;
+                showLoadingOverlay();  
+
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok.');
+                        }
+                        return response.blob();  
+                    })
+                    .then(blob => {
+                        const link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = 'export.zip';  
+                        link.click();
+
+                        document.getElementById('loadingOverlay').style.display = 'none';  
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('loadingOverlay').style.display = 'none';  
+                    });
+            });
+        });
+    </script>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
+
+<style>
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        cursor: not-allowed;
+    }
+
+    #loadingOverlay .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        color: white;
+    }
+
+    .info-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .info-table th, .info-table td {
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .bi.bi-clipboard {
+        font-size: 1.2em;
+        cursor: pointer;
+    }
+</style>
+
+{% endblock %}

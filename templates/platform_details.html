@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<div class="container">
+    {% if gpl_info %}
+    <div class="row justify-content-center">
+        <div class="col-12 mt-4 ">
+            <div class="card customized-background p-4 ">
+                <h2 class="customized-headline">{{ gpl_info.geo_accession }}</h2>
+                <table class="info-table">
+                    <tbody>
+                        <tr>
+                            <th>Title</th>
+                            <td>{{ gpl_info.title }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description</th>
+                            <td>{{ gpl_info.platform_description }}</td>
+                        </tr>
+                        <tr>
+                            <th>Organism</th>
+                            <td>[ {{ gpl_info.platform_organism_taxid }} ] -
+                                <a href="https://pubchem.ncbi.nlm.nih.gov/taxonomy/{{ gpl_info.platform_taxid }}">View taxonomy on Pubchem</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Contact Email</th>
+                            <td>{{ gpl_info.platform_contact_email }}</td>
+                        </tr>
+                        <tr>
+                            <th>Manufacturer</th>
+                            <td>{{ gpl_info.platform_manufacturer }}</td>
+                        </tr>
+                        <tr>
+                            <th># Series</th>
+                            <td>{{ gpl_info.series_count }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>  
+        </div>
+        <div class="col-12 ">
+            <div class="card customized-background p-4 ">
+                <h2 class="customized-headline">Available Series Data</h2>
+                <table class="info-table">
+                    <thead>
+                        <tr>
+                            <th>Series</th>
+                            <th># samples</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Summary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for series in gpl_info.gse_ids %}
+                        <tr>
+                            <td><a class="table-link" href="{{ url_for('series_details', gse_id=series.gse_id) }}">{{ series.gse_id }}</a></td>
+                            <td>{{ series.sample_count }}</td>
+                            <td>{{ series.series_title }}</td>
+                            <td>{{ series.series_type }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary toggle-summary-btn"><i class="bi bi-plus-lg"></i></button>
+                                <div class="series-summary">{{ series.series_summary }}</div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <p>No specific platform data found.</p>
+    {% endif %}
+</div>
+
+<!-- Inlined CSS -->
+<style>
+.toggle-summary-btn {
+    cursor: pointer;
+    border: none;
+    font-size: 1.2em;
+    margin-right: 10px;
+}
+.series-summary {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    transition: all 0.3s ease;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Alle Toggle-Buttons und Summary-Zellen auswählen
+    var toggleButtons = document.querySelectorAll('.toggle-summary-btn');
+    toggleButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var summary = button.nextElementSibling;
+            if (summary.style.display === "none" || summary.style.display === "") {
+                summary.style.display = "block";
+                button.innerHTML = '<i class="bi bi-dash-lg"></i>';
+            } else {
+                summary.style.display = "none";
+                button.innerHTML = '<i class="bi bi-plus-lg"></i>';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

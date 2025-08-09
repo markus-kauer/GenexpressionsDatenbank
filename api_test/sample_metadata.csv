@@ -1,0 +1,5 @@
+Sample,Series,Disease,Tissue Type,Series Type,BTO ID,Series Tissue Type,Normalization Method,Log Transformation,Mean,Standard Deviation,Min Value,Max Value
+GSM400180,GSE15960,Colorectal Cancer,CRC Tumor Tissue,Expression profiling by array,,,quantile,log1,5.081739294749717,1.8792401112785138,0.6166220160659955,11.326438272499013
+GSM400181,GSE15960,Colorectal Cancer,CRC Tumor Tissue,Expression profiling by array,,,quantile,log1,5.081739294749717,1.8792401112785138,0.6166220160659955,11.326438272499013
+GSM400182,GSE15960,Colorectal Cancer,CRC Tumor Tissue,Expression profiling by array,,,quantile,log1,5.081739294749717,1.8792401112785138,0.6166220160659955,11.326438272499013
+GSM400183,GSE15960,Colorectal Cancer,CRC Tumor Tissue,Expression profiling by array,,,quantile,log1,5.081739294749717,1.8792401112785135,0.6166220160659955,11.326438272499013

@@ -1,0 +1,14 @@
+DROP TABLE IF EXISTS sample_group_assignments;
+DROP TABLE IF EXISTS sample_groups;
+DROP TABLE IF EXISTS SampleSeries;
+DROP TABLE IF EXISTS GenExpression;
+DROP TABLE IF EXISTS MicroarrayMeasurements;
+DROP TABLE IF EXISTS Sample;
+DROP TABLE IF EXISTS Series;
+DROP TABLE IF EXISTS GeneAnnotations;
+DROP TABLE IF EXISTS Platform;
+DROP TABLE IF EXISTS tissue_types;
+DROP TABLE IF EXISTS FileLocation;
+DROP TABLE IF EXISTS ImportStatus;
+DROP TABLE IF EXISTS ExportHistory;
+DROP TABLE IF EXISTS User;

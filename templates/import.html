@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+{% if data is defined %}
+    <div class="container-flex mt-4 px-4">
+        <div class="row">
+            <div class="card customized-shadow customized-background ">
+                <h2 class="customized-headline">Platform: {{ data['Platform-ID'] }} | Series: {{ data['GSE-ID'] }}
+                    {% if gse_id_in_db %}
+                        <i class="bi bi-check-lg" data-bs-toggle="tooltip" title="Platform existing in database"></i>
+                    {% endif %}
+                </h2>
+                <div class="col-12">
+                    <table class="info-table">
+                        <tr>
+                            <th>Series Title</th>
+                            <td>{{ data['GSE-Title'] }}</td>
+                        </tr>
+                        <tr>
+                            <th>Platform Manufacturer</th>
+                            <td>{{ data['Platform Manufacturer'] }}</td>
+                        </tr>
+                        <tr>
+                            <th>Platform Description</th>
+                            <td>{{ data['Platform Description'] }}</td>
+                        </tr>
+                        <tr>
+                            <th>Organism</th>
+                            <td>
+                                [{{ data['Platform Organism'] }}] - 
+                                <a href="https://pubchem.ncbi.nlm.nih.gov/taxonomy/{{ data['Platform Taxid'] }}">View taxonomy on Pubchem</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Pubmed-ID</th>
+                            <td>
+                                {% for pubmed_id in data['PubMed-ID'].split('; ') %}
+                                    <a href="https://pubmed.ncbi.nlm.nih.gov/{{ pubmed_id }}" target="_blank">{{ pubmed_id }}</a>
+                                    {% if not loop.last %}{% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Contact Email</th>
+                            <td>{{ data['Platform Contact Email'] }}</td>
+                        </tr>
+                        <tr>
+                            <th>Available Samples</th>
+                            <td>{{ data['Samples Count'] }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center mt-4">
+            <div class="col-lg-9 col-md-10">
+                <div class="card customized-background customized-shadow p-2">
+                    <h3 class="customized-headline mb-4">Samples</h3>
+                    <br>
+                    
+                    {% if show_filter_checkbox %}
+                    <div id="filter-section" class="filter-highlight mb-3 p-2">
+                        <input class="form-check-input" type="checkbox" name="filter_p_value" id="filter_p_value">
+                        <label class="form-check-label font-weight-bold" for="filter_p_value">
+                            Import only ABS_CALL 'P' with p-value &lt; 0.05
+                        </label>
+                    </div>
+                    {% endif %}
+                    
+                    <form id="import-samples-form" action="/import_samples" method="post" onsubmit="return validateForm(event);">
+                        <table class="info-table">
+                            <thead>
+                                <tr>
+                                    <th>Sample</th>
+                                    <th>Title</th>
+                                    <th style="white-space: nowrap;">In Database</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key, value in data_samples.items() %}
+                                <tr>
+                                    <td class="centered">
+                                        <strong>{{ key }}</strong>
+                                    </td>
+                                    <td class="centered">
+                                        <text>{{ value['Title'] }}</text>
+                                    </td>
+                                    <td class="centered">
+                                        {% if value['Imported'] %}
+                                        <i class="bi bi-check-lg center-icon" data-bs-toggle="tooltip" title="Sample existing in database"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td class="centered">{{ value['Type'] }}</td>
+                                    <td class="centered">{{ value['Description'] }}</td>
+                                    <td class="centered">
+                                        {% if not value['Imported'] %}
+                                        <input type="checkbox" class="form-check-input-customized centered" id="check{{ loop.index }}" name="sample_ids[]" value="{{ key }}">
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        
+                        <button id="submit_button" type="submit" class="selective-button mb-3 mt-3">Import</button>
+                        <button id="submit_all_button" type="button" class="selective-button mb-3 mt-3" onclick="selectAllSamplesAndSubmit()">Import all Samples</button>
+                        
+                        {% if import_id is defined %}
+                            <input type="hidden" id="import_id" value="{{ import_id }}" name="import_id">
+                        {% endif %}
+                        <input type="hidden" id="gse_id" value="{{ gse_id }}" name="gse_id">
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center mb-5">
+            <div class="col-6">
+                <div id="progress-container" style="display: none;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressbar"
+                    aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 1%; height: 10px;"></div>
+                    <div id="current-sample-status" class="sample-progress p-2 mb-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    const ongoingImport = {{ ongoing_import|tojson }};
+    if (ongoingImport) {
+        const importId = "{{ import_id }}";
+        updateProgress(importId);
+        document.getElementById('progress-container').style.display = 'block';
+        document.getElementById('submit_button').style.display = 'none';
+        document.getElementById('submit_all_button').style.display = 'none';
+
+        progressInterval = setInterval(() => {
+            updateProgress(importId);
+        }, 7000);
+    }
+
+    checkAllImported();
+});
+
+function checkAllImported() {
+    const checkboxes = document.querySelectorAll('input[name="sample_ids[]"]');
+    const allChecked = Array.prototype.slice.call(checkboxes).every(checkbox => checkbox.disabled || checkbox.checked);
+    
+    if (allChecked) {
+        document.getElementById('submit_button').style.display = 'none';
+        document.getElementById('submit_all_button').style.display = 'none';
+        document.getElementById('filter-section').style.display = 'none';
+    }
+}
+
+function showToast(message) {
+    const toastEl = document.querySelector('.toast');
+    const toastBody = toastEl.querySelector('.toast-body');
+    toastBody.innerHTML = message; 
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
+function selectAllSamplesAndSubmit() {
+    const checkboxes = document.querySelectorAll('input[name="sample_ids[]"]');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+    startImport();
+}
+
+function validateForm(event) {
+    event.preventDefault();
+    const checkboxes = document.querySelectorAll('input[name="sample_ids[]"]');
+    const checkedOne = Array.prototype.slice.call(checkboxes).some(x => x.checked);
+    if (!checkedOne) {
+        console.log('No checkboxes selected.');
+        showToast("Please select at least one sample to import.");
+        return false;
+    }
+    console.log('Validation passed.');
+    startImport();
+}
+
+function startImport() {
+    const form = document.getElementById('import-samples-form');
+    const formData = new FormData(form);
+
+    const filterPValueCheckbox = document.getElementById('filter_p_value');
+    if (filterPValueCheckbox && filterPValueCheckbox.checked) {
+        formData.append('filter_p_value', 'true');
+    }
+
+    fetch('/import_samples', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const importId = data.import_id;
+            console.log('Import started with Import ID:', importId);
+            updateProgress(importId);
+            document.getElementById('progress-container').style.display = 'block';
+            document.getElementById('submit_button').style.display = 'none';
+            document.getElementById('submit_all_button').style.display = 'none';
+
+            showToast(`Your import has started. <a href="/status/${importId}" class="text-decoration-underline">Click here to view progress</a>.`);
+        } else {
+            console.error('Error:', data.message);
+            showToast(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error submitting the form:', error);
+        setTimeout(() => startImport(), 1000); 
+    });
+}
+
+
+function updateProgress(importId) {
+    const progressBarContainer = document.getElementById('progress-container');
+    const overallProgressBar = document.getElementById('progressbar');
+    const currentSampleStatus = document.getElementById('current-sample-status');
+    
+    fetch(`/status/${importId}`)
+        .then(response => response.json())
+        .then(data => {
+            overallProgressBar.style.width = `${data.progress}%`;
+            overallProgressBar.setAttribute('aria-valuenow', data.progress);
+            console.log('Overall progress:', data.progress);
+
+            Object.entries(data.imports).forEach(([sampleId, status]) => {
+                let sampleProgress = document.getElementById(`progress-${sampleId}`);
+                if (!sampleProgress) {
+                    sampleProgress = document.createElement('div');
+                    sampleProgress.id = `progress-${sampleId}`;
+                    sampleProgress.classList.add('sample-progress', 'p-2', 'mb-1');
+                    progressBarContainer.appendChild(sampleProgress);
+                }
+                sampleProgress.textContent = `Sample ${sampleId}: ${status}`;
+
+                if (status === 'failed') {
+                    window.location.reload();
+                }
+            });
+
+            if (data.progress < 100) {
+                setTimeout(() => updateProgress(importId), 1000); 
+            } else {
+                document.getElementById('submit_button').style.display = 'none';
+                document.getElementById('submit_all_button').style.display = 'none';
+                console.log('Import completed');
+                clearInterval(progressInterval);
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            setTimeout(() => updateProgress(importId), 1000);
+        });
+}
+
+let progressInterval;
+
+</script>
+
+{% else %}
+    <p class="text-danger">Keine Daten vorhanden.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,38 @@
+ /* spinner */
+
+ #spinner {
+     display: none;
+     color: #008080;
+ }
+
+ .spinner-border {
+     color: #008080;
+     position: fixed;
+     left: 50%;
+     bottom: 10vh;
+ }
+
+ /* toast */
+ .toast {
+     position: fixed;
+     bottom: 20px;
+     right: 20px;
+ }
+
+ .bi.bi-check-lg {
+     color: #28a745;
+ }
+
+
+ .filter-highlight {
+     background-color: #f8f9fa;
+     border: 1px solid #ced4da;
+     border-radius: 4px;
+     padding: 10px;
+     font-weight: bold;
+     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+ }
+
+ .filter-highlight:hover {
+     background-color: #e9ecef;
+ }

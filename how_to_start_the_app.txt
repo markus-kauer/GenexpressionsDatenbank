@@ -1,0 +1,6 @@
+hypercorn -c hypercorn_config.py web_app:app
+
+einloggen mit:
+
+admin
+pw_admin_123

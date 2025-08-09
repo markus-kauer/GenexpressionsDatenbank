@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block main_content %}
+<div class="container customized-background mt-4 p-4 text-center">
+    <h2 class="mb-4">About This Website</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h3 class="mt-4">What is the Gene Expression Omnibus (GEO)?</h3>
+            <p>
+                The Gene Expression Omnibus (GEO) is a public database managed by the National Center for Biotechnology Information (NCBI) to store gene expression data. Researchers worldwide contribute datasets, making GEO a critical resource for analyzing biological processes.
+            </p>
+            <br><br>
+            <h4>The Importance of Gene Expression Analysis</h4>
+            <p>
+                Gene expression analysis helps researchers understand gene regulation across tissues and conditions. These insights are essential for biomedical research and the development of new therapies.
+            </p>
+            <br><br>
+            <h4>Core GEO Data Types:</h4>
+            <ul class="list-unstyled">
+                <li><strong>GPL (Platform):</strong> Specific technologies used to measure gene expression, such as platform GPL570. Each platform provides details on the probes and methods used.</li>
+                <li><strong>GSE (Series):</strong> A collection of related experiments submitted by researchers, often covering multiple samples under different conditions.</li>
+                <li><strong>GSM (Sample):</strong> Individual samples within a study, representing specific tissue or cell states.</li>
+            </ul>
+            <br><br>
+            <h4>Data Features:</h4>
+            <ul class="list-unstyled">
+                <li><strong>Normalization Methods:</strong> Choose from various normalization techniques like quantile normalization or Z-score transformation to prepare data for reliable analysis.</li>
+                <li><strong>Data Visualization:</strong> Generate boxplots to compare gene expression patterns across different conditions and samples.</li>
+                <li><strong>Data Downloads:</strong> Export data in CSV format for further analysis.</li>
+            </ul>
+            <br><br>
+            <h4>Further Resources</h4>
+            <p>
+                For more information, you can visit:
+                <ul class="list-unstyled">
+                    <li><a href="https://www.ncbi.nlm.nih.gov/geo/" target="_blank" class="text-decoration-underline">Official GEO Website</a></li>
+                    <li><a href="https://www.ncbi.nlm.nih.gov/geo/info/download.html" target="_blank" class="text-decoration-underline">GEO Downloads</a></li>
+                </ul>
+            </p>
+            <br><br>
+            <h4>Example API Call</h4>
+            <p>
+                Below is an example of how you might use the API to access GEO data for your research.
+            </p>
+            <div class="text-center mt-3">
+                <img src="{{ url_for('static', filename='pyhton_api.png') }}" alt="api_call">
+                <p class="mt-2">Figure: Example API call to fetch GEO data.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

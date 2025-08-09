@@ -1,0 +1,17 @@
+Diese Methode hilft zur Indizierung der Datenbank. Das Problem jedoch ist, dass der Import stark darunter leidet.
+
+    async def create_index_if_not_exists(cursor, table_name, index_name, column_name):
+        query = f"""
+            SELECT COUNT(1) IndexIsThere FROM INFORMATION_SCHEMA.STATISTICS 
+            WHERE table_schema=DATABASE() AND table_name='{table_name}' AND index_name='{index_name}'
+        """
+        await cursor.execute(query)
+        index_exists = await cursor.fetchone()
+
+        if index_exists[0] == 0:
+            await cursor.execute(f"CREATE INDEX {index_name} ON {table_name}({column_name})")
+
+    await create_index_if_not_exists(cursor, 'GenExpression', 'idx_genexpression_sample_id', 'sample_id')
+    await create_index_if_not_exists(cursor, 'GenExpression', 'idx_genexpression_gene_symbol', 'gene_symbol(255)')
+    await create_index_if_not_exists(cursor, 'MicroarrayMeasurements', 'idx_microarray_sample_id', 'sample_id')
+    await create_index_if_not_exists(cursor, 'MicroarrayMeasurements', 'idx_microarray_id_ref', 'id_ref')

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<div class="container">
+    {% if info %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card customized-shadow customized-background p-4">
+                <h2 class="customized-headline">{{ info['GSE-ID'] }}</h2>
+                <table class="info-table">
+                    <tbody>
+                        <tr>
+                            <th>Title</th>
+                            <td>{{ info['GSE-Title'] }}</td>
+                        </tr>
+                        <tr>
+                            <th>Type</th>
+                            <td>{{ info['GSE Type'] }}</td>
+                        </tr>
+                        <tr>
+                            <th>BTO</th>
+                            <td>{{ info['BTO-ID'] }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tissue Type</th> 
+                            <td>{{ info['Tissue Type'] }}</td>
+                        </tr>
+                        <tr>
+                            <th>Summary</th>
+                            <td>{{ info['GSE Summary'] }}</td>
+                        </tr>
+                        <tr>
+                            <th>Pubmed-ID</th>
+                            <td>
+                                {% for pubmed_id in info['PubMed-ID'].split('; ') %}
+                                    <a href="https://pubmed.ncbi.nlm.nih.gov/{{ pubmed_id }}" target="_blank">{{ pubmed_id }}</a>
+                                    {% if not loop.last %}{% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Contact Email</th>
+                            <td>{{ info['Series Contact Email'] }}</td>
+                        </tr>
+                        <tr>
+                            <th>Number of Samples</th>
+                            <td>{{ info['Samples Count'] }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            <a href="{{ url_for('platform_details', gpl_id=info['Platform-ID']) }}" class="btn btn-outline-secondary btn-sm mt-3">Back to Platform</a>
+
+            {% if g.user.is_authenticated and g.user.role == 'admin' or g.user.role == 'datamanager'%}
+                <a href="{{ url_for('edit_series_page', gse_id=info['GSE-ID']) }}" class="btn btn-warning mt-3 mb-3">Edit Series</a>
+            {% endif %}
+         </div>
+        </div>
+        <div class="col-12 ">
+            <div class="card customized-shadow customized-background p-4 mb-4">
+                <h2 class="customized-headline mt-4">Available Samples</h2>
+                <table class="info-table">
+                    <thead>
+                        <tr>
+                            <th>Sample</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Group</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sample in info['Sample Data'] %}
+                        <tr data-description="{{ sample.description }}">
+                            <td>
+                                <a class="table-link" href="{{ url_for('gsm_details', gsm_id=sample.id) }}">
+                                    {{ sample.id }}
+                                </a>
+                            </td>
+                            <td>{{ sample.title }}</td>
+                            <td>{{ sample.type }}</td>
+                            <td>
+                                {% if sample.group_short_name %}
+                                    <strong>{{sample.group_short_name}}</strong> /
+                                {% endif %}
+                                {{ sample.group_name }} </td>
+                            <td class="description-cell">{{ sample.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <p>No information available.</p>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var descriptionCounts = {};
+
+    var rows = document.querySelectorAll('tr[data-description]');
+
+    rows.forEach(function(row) {
+        // Die Beschreibung aus der Zeile holen
+        var description = row.getAttribute('data-description');
+
+        // Überprüfen, ob die Beschreibung bereits im descriptionCounts-Objekt ist
+        if (description in descriptionCounts) {
+            // Wenn ja, die Anzahl erhöhen und die Zeile zur Liste hinzufügen
+            descriptionCounts[description].count++;
+            descriptionCounts[description].rows.push(row);
+        } else {
+            // Wenn nein, die Beschreibung dem Objekt hinzufügen
+            descriptionCounts[description] = { count: 1, rows: [row] };
+        }
+    });
+
+    // Durch jede Beschreibung im descriptionCounts-Objekt gehen
+    Object.keys(descriptionCounts).forEach(function(description) {
+        var group = descriptionCounts[description];
+        // Wenn die Beschreibung mehr als 5 Mal vorkommt
+        if (group.count > 5) {
+            // Eine neue Zeile für den Show/Hide-Button erstellen
+            var toggleRow = document.createElement('tr');
+            toggleRow.innerHTML = '<td colspan="5" class="text-center"><button class="selective-button toggle-description">show/hide descriptions</button></td>';
+            
+            // Die neue Zeile vor der ersten Zeile mit dieser Beschreibung einfügen
+            group.rows[0].parentNode.insertBefore(toggleRow, group.rows[0]);
+
+            // Alle Beschreibungszellen außer der ersten verstecken
+            group.rows.forEach(function(row, index) {
+                if (index > 0) {
+                    var descriptionCell = row.querySelector('.description-cell');
+                    descriptionCell.style.display = 'none';
+                }
+            });
+
+            // Klick-Event-Listener Show/Hide-Button 
+            toggleRow.querySelector('.toggle-description').addEventListener('click', function() {
+                // Beim Klick die Anzeige der Beschreibungszellen ein- oder ausblenden
+                group.rows.forEach(function(row, index) {
+                    if (index > 0) {
+                        var descriptionCell = row.querySelector('.description-cell');
+                        if (descriptionCell.style.display === 'none') {
+                            descriptionCell.style.display = '';
+                        } else {
+                            descriptionCell.style.display = 'none';
+                        }
+                    }
+                });
+            });
+        }
+    });
+});
+</script>
+{% endblock %}
+

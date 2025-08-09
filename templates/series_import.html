@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<div class="row" style="margin-top: 25vh;">
+    <div class="container-flex customized-shadow-frame text-white">
+        <h2>Import GEO Series (GSE) Data</h2>
+        <p class="description">
+            <br>
+            Enter the GSE-ID of the dataset you want to import.
+            <br>
+            A GSE-ID corresponds to a series of related experiments in the GEO database (Gene Expression Omnibus).
+            <br>
+            The imported data will contain multiple GSM (GEO Sample) records.
+        </p>
+        <form action="/series_import" method="post" id="gseForm">
+            <div class="row-flex">
+                <div class="col-md-3 mb-3">
+                    <input type="text" class="input-fields" placeholder="GSE4107" aria-label="GSE-ID" id="gse_id" name="gse_id" required>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <button class="selective-button w-100" type="submit">Submit</button>
+                </div>
+                <small class="form-text text-muted">Example GSE-ID: GSE4107</small>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div class="spinner-border" role="status" id="spinner" style="hidden">
+    <span class="sr-only">download...</span>
+</div>
+
+<div class="toast-container" id="toast_info" >
+    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="8000">
+        <div class="d-flex">
+            <div class="toast-body" id="toast_info_body">
+                Enter the GSE-ID of the dataset you want to import.
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function showToast () {
+            const toastElList = document.querySelectorAll('#toast_info .toast');
+            const toastList = Array.from(toastElList).map(function (toastEl) {
+                
+                return new bootstrap.Toast(toastEl).show();
+            });
+        }
+        showToast();
+        document.getElementById('gseForm').onsubmit = function() {
+            if (this.checkValidity()) {
+                console.log('Form is valid');
+                document.getElementById('spinner').style.display = 'block';
+            }
+            const is_downloaded = document.getElementById('is_downloaded').value;
+            if (is_downloaded === 'n') {
+                    document.getElementById('toast_info_body').innerHTML = "The download can take some time. Please be patient.";
+            }
+            showToast();
+        };
+    });
+</script>
+{% endblock %}

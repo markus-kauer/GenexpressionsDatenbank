@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block main_content %}
+<div class="container">
+    <div class="row justify-content-center mt-4">
+        <div class="col-lg-10 col-md-11">
+            {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            <!-- Add New User -->
+            <div class="card customized-shadow customized-background p-4 rounded">
+                <h2 class="customized-headline text-center">Add New User</h2>
+                <form action="{{ url_for('add_user') }}" method="post">
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <select class="form-select" id="role" name="role">
+                                <option value="user">User</option>
+                                <option value="datamanager">Data Manager</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Add</button> <!-- Use w-100 here -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card customized-shadowcustomized-background p-4 rounded">
+                <h2 class="customized-headline text-center">Existing Users</h2>
+                <table class="info-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.role }}</td>
+                            <td>
+                                <form action="{{ url_for('delete_user', user_id=user.id) }}" method="post" style="display:inline;" onsubmit="return confirmDelete('{{ user.username }}');">
+                                    <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                                </form>
+                                <button class="btn btn-secondary btn-sm" onclick="showEditForm({{ user.id }}, '{{ user.username }}', '{{ user.role }}')">Edit</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="editUserForm" class="card customized-shadow customized-background p-4 rounded" style="display:none;">
+                <form id="editUser" action="" method="post">
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="edit_username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="edit_username" name="username" required>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="edit_password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="edit_password" name="password" required>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="edit_role" class="form-label">Role</label>
+                            <select class="form-select" id="edit_role" name="role">
+                                <option value="user">User</option>
+                                <option value="datamanager">Data Manager</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3 d-flex align-items-end justify-content-end">
+                            <button type="submit" class="btn btn-primary w-100">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showEditForm(userId, username, role) {
+    document.getElementById('editUser').action = `/edit_user/${userId}`;
+    document.getElementById('edit_username').value = username;
+    document.getElementById('edit_role').value = role;
+    document.getElementById('editUserForm').style.display = 'block';
+}
+
+function confirmDelete(username) {
+    return confirm(`Are you sure you want to delete the user "${username}"?`);
+}
+</script>
+{% endblock %}

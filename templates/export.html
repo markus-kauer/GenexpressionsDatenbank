@@ -1,0 +1,576 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+<div class="container-fluid mt-4">
+    <!-- Export Data Container -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card customized-shadow customized-background p-4">
+                <div class="row mb-3 d-flex flex-column justify-content-center align-items-center">
+                    {% if not tree_data_valid %}
+                    <div class="col-12 text-center mb-2">
+                        <h3>No data available for export!</h3>
+                        <h4>Go to edit your series and assign groups to the samples.</h4>
+                    </div>
+                    {% endif %}
+                    <h2 class="customized-headline">Normalization Methods</h2>
+
+                    <!-- Normalization Method Selection -->
+                    <div class="col-6 text-center mb-2 mt-2">
+                        <div class="form-group">
+                            <div class="d-flex flex-column">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="normalizationMethod" id="quantile" value="quantile" checked>
+                                    <label class="btn btn-outline-secondary w-100" for="quantile">Quantile Normalization</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="normalizationMethod" id="minmax" value="minmax">
+                                    <label class="btn btn-outline-secondary w-100" for="minmax">Min-Max Normalization</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="normalizationMethod" id="zscore" value="zscore">
+                                    <label class="btn btn-outline-secondary w-100" for="zscore">Z-score Normalization</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="normalizationMethod" id="none" value="n/a">
+                                    <label class="btn btn-outline-secondary w-100" for="none">No Adjustment</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Log Transformation Checkbox -->
+                        <div class="form-check mb-1 mt-2 d-flex align-items-center justify-content-center">
+                            <input class="form-check-input" type="checkbox" id="logTransform" name="logTransform">
+                            <label class="btn btn-outline-secondary ms-2" for="logTransform">Apply Log Transformation</label>
+                        </div>
+                    </div>
+
+                    <!-- Buttons for Actions -->
+                    <div class="col-4 text-center mt-2 mb-2">
+                        <button id="normalizedBoxplotBtn" class="btn btn-success w-100">Show Boxplot</button>
+                    </div>
+                    <div class="col-4 text-center mt-2 mb-2">
+                        <form id="exportForm" class="w-100">
+                            <button type="submit" class="btn btn-success w-100">Export CSV</button>
+                        </form>
+                    </div>
+
+                </div>
+
+                <!-- Combo Tree Input Box -->
+                <div class="row mt-3 mb-3">
+                    <div class="col-12">
+                        <div class="form-group w-100">
+                            <input type="text" class="form-control customized-inputfields" id="justAnInputBox1" name="selections" placeholder="Select" autocomplete="off" required />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Selection Details Table -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card p-3">
+                <h4 class="customized-headline text-center">Selected Samples</h4>
+                <div class="col-2 mt-2 mb-2">
+                    <button id="toggleUnselectedBtn" class="btn btn-secondary mt-2 mb-2">Show Unselected</button>
+                </div>
+                <table class="table table-bordered" id="selectionTable">
+                    <thead>
+                        <tr>
+                            <th>Disease</th>
+                            <th>Subtype</th>
+                            <th>Tissue</th>
+                            <th>Series</th>
+                            <th>Sample</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows will be dynamically populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Normalized Boxplot Container -->
+    <div class="row mt-4 align-items-center justify-content-center ">
+        <div class="col-11 text-black">
+            <div id="normalizedBoxplotContainer" class="card customized-shadow text-white p-4 mt-4 mb-4 rounded" style="display:none;">
+                <h3 id="boxplotTitle" class="text-center text-black customized-headline "></h3>
+                <br>
+                <div id="normalizedBoxplotGrid" class="d-flex flex-wrap justify-content-center"></div>
+                <div id="additionalBoxplotGrid" class="d-flex flex-wrap justify-content-center" style="display:none;"></div>
+
+                <div class="col-4 text-center mt-2">
+                    <button id="applyLogTransformBtn" class="btn btn-warning  limited-width" style="display:none;">Apply Log Transformation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+#loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    cursor: not-allowed;
+}
+
+#loadingOverlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    color: white;
+}
+
+.unselected {
+    background-color: lightgray;
+    color: black;
+}
+.limited-width {
+    padding: 0.5rem 1rem; 
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/comboTreeStyle.css') }}" />
+<script src="{{ url_for('static', filename='js/comboTreePlugin.js') }}"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    var treeData = {{ tree_data|tojson }};
+    
+    // primary hierarchy
+    var primaryHierarchy = treeData.find(node => node.id === "disease");
+
+    // Initialize comboTree
+    var comboTree1 = $('#justAnInputBox1').comboTree({
+        source: treeData,
+        isMultiple: true,
+        cascadeSelect: true,
+        collapse: true
+    });
+
+    var showUnselected = false;
+
+    comboTree1.onChange(() => {
+        updateSelectionTable();
+        checkAndToggleButtons();
+    });
+
+    function updateSelectionTable() {
+        var selectedItems = comboTree1.getSelectedIds();
+        $('#selectionTable tbody').empty();
+
+        if (!selectedItems || selectedItems.length === 0) {
+            if (showUnselected) {
+                addUnselectedItems(new Set());
+            }
+            return;
+        }
+
+        const gsmItems = extractGsmIdsFromSelection(selectedItems);
+        const uniqueSamples = new Set();
+
+        gsmItems.forEach(function(gsm) {
+            if (!uniqueSamples.has(gsm.sample)) {
+                uniqueSamples.add(gsm.sample);
+                $('#selectionTable tbody').append(`
+                    <tr>
+                        <td>${gsm.disease}</td>
+                        <td>${gsm.subtype}</td>
+                        <td>${gsm.tissue}</td>
+                        <td>${gsm.series}</td>
+                        <td>${gsm.sample}</td>
+                    </tr>
+                `);
+            }
+        });
+
+        if (showUnselected) {
+            addUnselectedItems(uniqueSamples);
+        }
+    }
+
+    function extractGsmIdsFromSelection(selectedItems) {
+        if (!selectedItems) return [];
+        const gsmItems = [];
+        const uniqueSamples = new Set();
+
+        selectedItems.forEach(item => {
+            const itemSampleId = item.split('|').pop();
+
+            if (uniqueSamples.has(itemSampleId)) return;
+
+            uniqueSamples.add(itemSampleId);
+
+            traverseTreeDataForSample(treeData, itemSampleId, gsmItems);
+        });
+
+        return gsmItems;
+    }
+
+    function traverseTreeDataForSample(nodes, sampleId, gsmItems) {
+        nodes.forEach(node => {
+            if (node.subs && node.subs.length > 0) {
+                traverseTreeDataForSample(node.subs, sampleId, gsmItems);
+            } else {
+                const nodeSampleId = node.id.split('|').pop();
+                if (nodeSampleId === sampleId) {
+                    const gsm = parseNodeId(node.id);
+                    gsmItems.push(gsm);
+                }
+            }
+        });
+    }
+
+    function parseNodeId(id) {
+        const [disease, subtype, tissue, series, sample] = id.split('|');
+        return {
+            disease: disease || '',
+            subtype: subtype || '',
+            tissue: tissue || '',
+            series: series || '',
+            sample: sample || ''
+        };
+    }
+
+    function addUnselectedItems(selectedSamples) {
+        $('#selectionTable tbody .unselected').remove();
+
+        function traversePrimaryHierarchy(nodes) {
+            nodes.forEach(node => {
+                if (node.subs && node.subs.length > 0) {
+                    traversePrimaryHierarchy(node.subs);
+                } else {
+                    const gsm = parseNodeId(node.id);
+
+                    if (!selectedSamples.has(gsm.sample)) {
+                        $('#selectionTable tbody').append(`
+                            <tr class="unselected">
+                                <td>${gsm.disease}</td>
+                                <td>${gsm.subtype}</td>
+                                <td>${gsm.tissue}</td>
+                                <td>${gsm.series}</td>
+                                <td>${gsm.sample}</td>
+                            </tr>
+                        `);
+                    }
+                }
+            });
+        }
+
+        traversePrimaryHierarchy(primaryHierarchy.subs);
+    }
+
+    function checkAndToggleButtons() {
+        var selectedItems = comboTree1.getSelectedIds();
+
+        if (!selectedItems || selectedItems.length === 0) {
+            document.getElementById('normalizedBoxplotBtn').disabled = true;
+            document.getElementById('exportForm').querySelector('button').disabled = true;
+            return;
+        }
+
+        const gsmItems = extractGsmIdsFromSelection(selectedItems);
+        var hasValidSelection = gsmItems.length > 0;
+
+        document.getElementById('normalizedBoxplotBtn').disabled = !hasValidSelection;
+        document.getElementById('exportForm').querySelector('button').disabled = !hasValidSelection;
+    }
+
+    document.getElementById('toggleUnselectedBtn').addEventListener('click', function() {
+        showUnselected = !showUnselected;
+
+        var toggleButton = document.getElementById('toggleUnselectedBtn');
+        if (showUnselected) {
+            toggleButton.textContent = 'Hide Unselected';
+        } else {
+            toggleButton.textContent = 'Show Unselected';
+        }
+
+        updateSelectionTable(); 
+    });
+
+
+    // Export CSV event handler
+    document.getElementById('exportForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var selectedItems = comboTree1.getSelectedIds();
+
+        if (!selectedItems || selectedItems.length === 0) {
+            alert('Please make a selection before exporting.');
+            return;
+        }
+
+        const gsmItems = extractGsmIdsFromSelection(selectedItems);
+        const uniqueSamples = [...new Set(gsmItems.map(gsm => gsm.sample))];
+
+        var normalizationMethod = document.querySelector('input[name="normalizationMethod"]:checked').value;
+        var logTransform = document.getElementById('logTransform').checked;
+
+        console.log("Samples to export:", uniqueSamples);
+
+        if (!uniqueSamples.length) {
+            alert('Please make a selection before exporting.');
+            return;
+        }
+
+        document.getElementById('loadingOverlay').style.display = 'flex';
+
+        fetch('{{ url_for("export_csv") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                sample_list: uniqueSamples.join(','),
+                normalizationMethod: normalizationMethod,
+                logTransform: logTransform 
+            }),
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            var link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = 'gene_expression_data.zip';
+            link.click();
+            document.getElementById('loadingOverlay').style.display = 'none';
+        })
+        .catch(error => {
+            console.error('Error during export:', error);
+            document.getElementById('loadingOverlay').style.display = 'none';
+        });
+    });
+
+    var globalData = null;
+
+    document.getElementById('normalizedBoxplotBtn').addEventListener('click', function() {
+        var selectedItems = comboTree1.getSelectedIds();
+
+        if (!selectedItems || selectedItems.length === 0) {
+            alert('Please make a selection before viewing boxplot.');
+            return;
+        }
+
+        const gsmItems = extractGsmIdsFromSelection(selectedItems);
+        const uniqueSamples = [...new Set(gsmItems.map(gsm => gsm.sample))];
+
+        if (!uniqueSamples.length) {
+            alert('Please make a selection before viewing boxplot.');
+            return;
+        }
+
+        generateBoxplot('{{ url_for("generate_boxplot") }}', uniqueSamples, false);
+
+    });
+
+    document.getElementById('applyLogTransformBtn').addEventListener('click', function() {
+        if (globalData) {
+            applyLogTransformAndRenderBoxplot(globalData);
+            document.getElementById('applyLogTransformBtn').style.display = 'none'; 
+        }
+    });
+
+    function processBoxplotData(data) {
+        var gridId = 'normalizedBoxplotGrid'; 
+        var chartContainer = document.getElementById(gridId);
+        containerId = 'normalizedBoxplotContainer';
+        chartContainer.innerHTML = ''; // Clear previous plots
+
+        samples = data.samples;
+        var margin = { top: 10, right: 30, bottom: 50, left: 60 },
+        width = 900 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+        var sampleIds = Object.keys(samples);
+        var allValues = [];
+        sampleIds.forEach(id => {
+            allValues = allValues.concat(samples[id].filter(val => val !== null));
+        });
+
+        function createSvg(containerId) {
+            return d3.select('#' + containerId)
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+        }
+
+        function drawAxes(container, sampleIds) {
+            var x = d3.scaleBand()
+                .range([0, width])
+                .domain(sampleIds)
+                .paddingInner(1)
+                .paddingOuter(0.5);
+
+            var minValue = Math.min(0, d3.min(allValues));
+            var maxValue = d3.max(allValues);
+
+            var y = d3.scaleLinear()
+                .domain([minValue, maxValue])
+                .range([height, 0]);
+
+            container.append('g')
+                .attr('transform', 'translate(0,' + height + ')')
+                .call(d3.axisBottom(x).tickFormat(d => d));
+
+            container.append('g').call(d3.axisLeft(y));
+
+            return { x: x, y: y };
+        }
+
+        function drawBoxPlot(container, ids, scales) {
+            var boxWidth = Math.min(40, width / ids.length - 5);
+            ids.forEach((id, i) => {
+                var values = samples[id].filter(val => val !== null).sort(d3.ascending);
+                var q1 = d3.quantile(values, 0.25);
+                var median = d3.quantile(values, 0.5);
+                var q3 = d3.quantile(values, 0.75);
+                var interQuantileRange = q3 - q1;
+                var min = Math.max(0, q1 - 1.5 * interQuantileRange);
+                var max = q3 + 1.5 * interQuantileRange;
+
+                container.append('line')
+                    .attr('x1', scales.x(id))
+                    .attr('x2', scales.x(id))
+                    .attr('y1', scales.y(min))
+                    .attr('y2', scales.y(max))
+                    .attr('stroke', 'black');
+
+                container.append('rect')
+                    .attr('x', scales.x(id) - boxWidth / 2)
+                    .attr('y', scales.y(q3))
+                    .attr('height', scales.y(q1) - scales.y(q3))
+                    .attr('width', boxWidth)
+                    .attr('stroke', 'black')
+                    .style('fill', '#69b3a2');
+
+                container.append('line')
+                    .attr('x1', scales.x(id) - boxWidth / 2)
+                    .attr('x2', scales.x(id) + boxWidth / 2)
+                    .attr('y1', scales.y(median))
+                    .attr('y2', scales.y(median))
+                    .attr('stroke', 'black');
+            });
+        }
+
+        // Group the sample IDs in batches of 10 and draw the plots
+        var batchSize = 10;
+        var numberOfBatches = Math.ceil(sampleIds.length / batchSize);
+        
+        for (var i = 0; i < numberOfBatches; i++) {
+            var batchStart = i * batchSize;
+            var batchEnd = Math.min((i + 1) * batchSize, sampleIds.length);
+            var batch = sampleIds.slice(batchStart, batchEnd);
+
+            // Create a new div for each batch
+            var batchContainerId = `boxplot-batch-${i}`;
+            var newDiv = document.createElement('div');
+            newDiv.id = batchContainerId;
+            newDiv.className = 'boxplot-batch';
+            chartContainer.appendChild(newDiv);
+
+            // Create a new svg for each batch and draw boxplot
+            var svg = createSvg(batchContainerId);
+            var scalesBatch = drawAxes(svg, batch);
+            drawBoxPlot(svg, batch, scalesBatch);
+        }
+
+        document.getElementById(containerId).style.display = 'flex';
+    }
+
+    function applyLogTransformAndRenderBoxplot(data) {
+        const samples = data.samples; // Access the samples object
+        for (let sampleId in samples) {
+            // Check if the value is an array
+            if (Array.isArray(samples[sampleId])) {
+                // Apply log transformation
+                samples[sampleId] = samples[sampleId].map(value => value ? Math.log1p(value) : null);
+            } else {
+                console.error(`Data for sample ${sampleId} is not an array:`, samples[sampleId]);
+            }
+        }
+        processBoxplotData(data); // Continue with the transformed data
+    }
+
+    function generateBoxplot(url, sampleList, logTransform) {
+        if (logTransform && globalData) {
+            // Skip fetch and just use global data
+            applyLogTransformAndRenderBoxplot(globalData);
+            return;
+        }
+
+        var normalizationMethod = document.querySelector('input[name="normalizationMethod"]:checked').value;
+        var logTransform = document.getElementById('logTransform').checked;
+
+        console.log("Generating boxplot for samples:", sampleList);
+
+        document.getElementById('loadingOverlay').style.display = 'flex';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                sample_list: sampleList,
+                normalizationMethod: normalizationMethod,
+                logTransform: logTransform 
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loadingOverlay').style.display = 'none';
+
+            if (data.error) {
+                alert('An error occurred: ' + data.error);
+                return;
+            }
+
+            globalData = data;
+
+            if (!globalData.samples || Object.keys(globalData.samples).length === 0) {
+                alert('No data available for the selected samples.');
+                return;
+            }
+
+            if (!logTransform) {
+                document.getElementById('applyLogTransformBtn').style.display = 'flex';
+            }
+
+            processBoxplotData(globalData);
+
+        })
+        .catch(error => {
+            console.error('Error during boxplot generation:', error);
+            document.getElementById('loadingOverlay').style.display = 'none';
+        });
+    }
+
+});
+</script>
+
+{% endblock %}
